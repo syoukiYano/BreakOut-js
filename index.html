@@ -1,0 +1,226 @@
+<!-- 参考: https://www.youtube.com/watch?v=6G8MJCA0oFg&ab_channel=JavaScriptFun -->
+<!DOCTYPE html>
+<html>
+    <head></head>
+    <body>
+        <script>
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = 400;
+            canvas.height= 400;
+            canvas.setAttribute('style','display:block;margin:auto;background-color: #ddd');
+            document.body.appendChild(canvas);
+            let START = false;
+            const game = {
+                    easy: false,
+                    normal: false,
+                    hard: false,
+                    extream: false,
+                    god: false,
+            }
+
+            document.addEventListener('keydown',(e)=>{
+                if(e.key === "Enter" && !START){
+                    START = true;
+                    draw(ctx);
+                } 
+            });
+            draw(ctx);
+
+            function draw(ctx){
+                if(START){
+                    
+                    game.easy = true;
+                    BreakGame();
+                }else if(!START){
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = 'black';
+                    ctx.font = "48px consolas";
+                    ctx.fillText('ブロックゲーム', canvas.width / 2, canvas.height / 4);
+                    ctx.font = "32px consolas";
+                    ctx.fillText('> ' + 'スタート', canvas.width / 2, canvas.height / 4 * 3);
+
+                }
+            }       
+            const BreakGame = () =>{
+                const ball = {
+                    x: null,
+                    y: null,
+                    width: 6,
+                    height: 6,
+                    speed: null,
+                    dx : null,
+                    dy : null,
+                    update: function(){
+                        ctx.fillRect(this.x,this.y,this.width,this.height);
+                        ctx.fill();
+
+                        if(this.x< 0 || this.x > canvas.width) this.dx *= -1;
+                        if(this.y< 0 || this.y > canvas.height) this.dy *= -1;
+
+                        this.x += this.dx;
+                        this.y += this.dy;
+                    }
+                }           
+                const paddle = {
+                    x: null,                    
+                    y: null,
+    　　　　　　　　   width : 100,
+                    height: 15,
+                    ArrowLeft: false,
+                    ArrowRight: false,
+                    speed:null,                
+                    update: function(){
+                        ctx.fillRect(this.x,this.y,this.width,this.height);
+                        ctx.fill();                        
+                        this.x += this.speed;  
+                        if (paddle.x < 0 || paddle.x > canvas.width - paddle.width) {
+                            this.speed = 0;
+                        }
+                        document.addEventListener('keydown', e => {
+                            if (e.key === 'ArrowLeft' && paddle.x > 0) {paddle.speed = -10};
+                            if (e.key === 'ArrowRight' && paddle.x < canvas.width - paddle.width) {paddle.speed = 10};
+                        });                         
+                    }
+                }          
+                const block = {
+                    width: null,
+                    height: 20,
+                    data: [],                
+                    nownum: 0,
+                    blocknum: 0,
+
+                    update: function(){
+                        this.data.forEach(brick => {
+                            // ctx.strokeRect(brick.x,brick.y,brick.width,brick.height)
+                            // ctx.strokeStyle()
+                            // ctx.stroke();
+                            ctx.fillRect(brick.x,brick.y,brick.width,brick.height);
+                            ctx.fillStyle = "";
+                            ctx.fill();
+                        })
+                    }
+                }           
+                
+
+                const collide = (obj1, obj2) => {
+                    return obj1.x < obj2.x + obj2.width &&
+                        obj2.x < obj1.x + obj1.width &&
+                        obj1.y < obj2.y + obj2.height &&
+                        obj2.y < obj1.y + obj1.height;
+                }
+                const init = () => {
+                    paddle.x = canvas.width/2 - paddle.width/2;
+                    paddle.y = canvas.height - paddle.height;
+                    paddle.speed = 0;
+                    ball.x = canvas.width/2;
+                    ball.y = canvas.height/2 + 50;
+                    //level random処理
+                    let levelRandom = [
+                        [], [], [], [], [], [], [], [], [], [], [], [],
+                    ];
+                    //ボールの速さ、向き　難易度
+                    if(game.easy){
+                        ball.speed = Math.floor(Math.random() * 2 + 3)
+                        for (let i = 0; i < 4; i++) {
+                            for (let j = 0; j < 6; j++) {
+                                levelRandom[i].push(Math.floor(Math.random() * 2))
+                            }
+                        }       
+                    }else if(game.normal){
+                        ball.speed = Math.floor(Math.random() * 3 + 3)
+                        for (let i = 0; i < 6; i++) {
+                            for (let j = 0; j < 6; j++) {
+                                levelRandom[i].push(Math.floor(Math.random() * 2))
+                            }
+                        }       
+                    }else if(game.hard){
+                        ball.speed = Math.floor(Math.random() * 3 + 4)
+                        for (let i = 0; i < 8; i++) {
+                            for (let j = 0; j < 8; j++) {
+                                levelRandom[i].push(Math.floor(Math.random() * 2))
+                            }
+                        }       
+                    }else if(game.extream){
+                        ball.speed = Math.floor(Math.random() * 2 + 6)
+                        for (let i = 0; i < 10; i++) {
+                            for (let j = 0; j < 20; j++) {
+                                levelRandom[i].push(Math.floor(Math.random() * 2))
+                            }
+                        }       
+                    }else if(game.god){
+                        ball.speed = Math.floor(Math.random() * 2 + 7)
+                        for (let i = 0; i < 10; i++) {
+                            for (let j = 0; j < 40; j++) {
+                                levelRandom[i].push(Math.floor(Math.random() * 2))
+                            }
+                        }       
+                    }
+                            
+                    let level = levelRandom;
+                    block.width = canvas.width / level[0].length;
+
+                    if(Math.floor(Math.random()*2) == 1){
+                        ball.dx = -ball.speed
+                    }else{
+                        ball.dx = ball.speed
+                    }                
+                    ball.dy = -ball.speed;
+
+                    for(let i = 0; i< level.length; i++){
+                        for (let j = 0; j < level[i].length; j++){
+                            if(level[i][j]){
+                                block.data.push({
+                                    x: block.width * j,
+                                    y: block.height * i,
+                                    width : block.width,
+                                    height: block.height,                                
+                                })                            
+                                block.nownum++                            
+                            }
+                        }
+                    }  
+                    
+
+                }              
+                const event = () => {
+                                    
+                }
+                const loop = () => {
+                    ctx.clearRect(0,0,canvas.width,canvas.height);
+                    paddle.update();
+                    ball.update();
+                    block.update();
+
+                    //ループ処理系(その他)
+                    if (collide(ball, paddle)) {
+                        ball.dy *= -1;
+                        ball.y = paddle.y - ball.height;
+                    }
+
+                    block.data.forEach((brick, index) => {
+                        if (collide(ball, brick)) {
+                            ball.dy *= -1;
+                            block.data.splice(index, 1);
+                            block.blocknum++
+                            if (block.blocknum == block.nownum) {
+                                init();
+                            }
+                        }
+                    });
+
+                    window.requestAnimationFrame(loop);    
+                    
+                }                                  
+
+                init();   
+                event();         
+                loop();                
+
+            }            
+            
+            
+        </script>
+    </body>
+</html>
